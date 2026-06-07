@@ -3,8 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:;">
     <title>دفتر الحسابات الاحترافي | الإصدار الذهبي</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"
+        integrity="sha384-Yv5O+t3uE3hunW8uyrbpPW3iw6/5/Y7HitWJBLgqfMoA36NogMmy+8wWZMpn3HWc"
+        crossorigin="anonymous">
     </script>
     <style>
         * {
@@ -769,7 +772,7 @@
                 <div style="font-family: 'Segoe UI', Tahoma, sans-serif; padding: 20px; direction: rtl; text-align: right;">
                     <div style="text-align: center; margin-bottom: 20px;">
                         <h2 style="color: #0a2540;">كشف حساب تفصيلي</h2>
-                        <p>العميل: ${escapeHtml(client.name)} | الهاتف: ${client.phone}</p>
+                        <p>العميل: ${escapeHtml(client.name)} | الهاتف: ${escapeHtml(client.phone)}</p>
                         <p>النطاق: ${rangeLabel} | التاريخ: ${new Date().toLocaleDateString('ar-EG')}</p>
                     </div>
                     <table style="width:100%; border-collapse: collapse; font-size: 0.9rem;" border="1" cellpadding="8">
@@ -898,6 +901,7 @@
             const name = document.getElementById('clientName').value.trim();
             let phone = document.getElementById('clientPhone').value.trim();
             if (!name) return alert("يرجى إدخال اسم العميل");
+            if (!/^\+?[0-9\s\-()]{3,20}$/.test(phone)) return alert("رقم الهاتف غير صالح");
             const newClient = { id: Date.now().toString(), name, phone, transactions: [] };
             appData.clients.push(newClient);
             saveToLocal();
@@ -914,7 +918,7 @@
             }
             clientsListDiv.innerHTML = appData.clients.map(c => `
                 <div class="client-row-card" data-id="${c.id}">
-                    <div class="client-info"><h4>${escapeHtml(c.name)}</h4><span>📞 ${c.phone}</span></div>
+                    <div class="client-info"><h4>${escapeHtml(c.name)}</h4><span>📞 ${escapeHtml(c.phone)}</span></div>
                     <div class="client-actions">
                         <button class="editClientBtn" data-id="${c.id}">✏️ تعديل</button>
                         <button class="deleteClientBtn" data-id="${c.id}">🗑️ حذف</button>
@@ -955,13 +959,15 @@
                     const newPhone = prompt("رقم الهاتف الجديد:", client.phone);
                     if (newPhone === null) return;
                     if (!newName.trim()) { alert("الاسم لا يمكن أن يكون فارغاً"); return; }
+                    const trimmedPhone = newPhone.trim() || client.phone;
+                    if (!/^\+?[0-9\s\-()]{3,20}$/.test(trimmedPhone)) { alert("رقم الهاتف غير صالح"); return; }
                     client.name = newName.trim();
-                    client.phone = newPhone.trim() || client.phone;
+                    client.phone = trimmedPhone;
                     saveToLocal();
                     renderClientsList();
                     if (activeClientId === id) {
                         document.getElementById('activeClientName').innerText = client.name;
-                        document.getElementById('activeClientPhoneDisplay').innerHTML = `📱 ${client.phone}`;
+                        document.getElementById('activeClientPhoneDisplay').textContent = `📱 ${client.phone}`;
                     }
                 });
             });
@@ -972,7 +978,7 @@
             const client = appData.clients.find(c => c.id === clientId);
             if (!client) return;
             document.getElementById('activeClientName').innerText = client.name;
-            document.getElementById('activeClientPhoneDisplay').innerHTML = `📱 ${client.phone}`;
+            document.getElementById('activeClientPhoneDisplay').textContent = `📱 ${client.phone}`;
             document.getElementById('printDateSpan').innerText = new Date().toLocaleDateString('ar-EG');
             clientsScreen.style.display = 'none';
             accountScreen.style.display = 'block';
@@ -1183,10 +1189,12 @@
 
         function escapeHtml(str) { 
             if (!str) return ''; 
-            return str.replace(/[&<>]/g, function(m) { 
+            return str.replace(/[&<>"']/g, function(m) { 
                 if (m === '&') return '&amp;'; 
                 if (m === '<') return '&lt;'; 
                 if (m === '>') return '&gt;'; 
+                if (m === '"') return '&quot;'; 
+                if (m === "'") return '&#39;'; 
                 return m; 
             }); 
         }
