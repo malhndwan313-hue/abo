@@ -1,0 +1,10 @@
+node_modules/
+
+# .NET
+bin/
+obj/
+*.user
+*.suo
+*.sln.docstates
+.vs/
+*.nupkg

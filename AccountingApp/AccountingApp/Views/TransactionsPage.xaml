@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:AccountingApp.ViewModels"
+             x:Class="AccountingApp.Views.TransactionsPage"
+             Title="جميع المعاملات"
+             FlowDirection="RightToLeft"
+             BackgroundColor="{StaticResource BackgroundLight}">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="16">
+
+            <!-- Filter Buttons -->
+            <Frame Style="{StaticResource CardFrame}" Padding="10">
+                <HorizontalStackLayout Spacing="8" HorizontalOptions="Center">
+                    <Button Text="الكل"
+                            Command="{Binding FilterByTypeCommand}"
+                            CommandParameter="الكل"
+                            Style="{StaticResource SecondaryButton}" />
+                    <Button Text="له (دائن)"
+                            Command="{Binding FilterByTypeCommand}"
+                            CommandParameter="له"
+                            BackgroundColor="{StaticResource Success}"
+                            TextColor="White" FontAttributes="Bold"
+                            CornerRadius="25" Padding="10,6" />
+                    <Button Text="عليه (مدين)"
+                            Command="{Binding FilterByTypeCommand}"
+                            CommandParameter="عليه"
+                            BackgroundColor="{StaticResource Danger}"
+                            TextColor="White" FontAttributes="Bold"
+                            CornerRadius="25" Padding="10,6" />
+                </HorizontalStackLayout>
+            </Frame>
+
+            <!-- Transactions List -->
+            <Frame Style="{StaticResource CardFrame}">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="{Binding FilterType, StringFormat='المعاملات: {0}'}"
+                           Style="{StaticResource SectionTitle}" />
+
+                    <CollectionView ItemsSource="{Binding Transactions}"
+                                    EmptyView="لا توجد معاملات مسجلة">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Frame Padding="12" Margin="0,4" CornerRadius="14"
+                                       BackgroundColor="White" BorderColor="{StaticResource BorderLight}">
+                                    <Grid ColumnDefinitions="*,Auto,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="8">
+                                        <Label Text="{Binding Details}" FontAttributes="Bold" FontSize="15"
+                                               Grid.Row="0" Grid.Column="0" />
+                                        <Label Text="{Binding AmountDisplay}" FontAttributes="Bold"
+                                               TextColor="{Binding AmountColor}" FontSize="15"
+                                               Grid.Row="0" Grid.Column="1" />
+                                        <Label Grid.Row="1" Grid.Column="0" FontSize="12"
+                                               TextColor="{StaticResource TextMuted}">
+                                            <Label.FormattedText>
+                                                <FormattedString>
+                                                    <Span Text="{Binding DateDisplay}" />
+                                                    <Span Text=" | " />
+                                                    <Span Text="{Binding Currency}" />
+                                                </FormattedString>
+                                            </Label.FormattedText>
+                                        </Label>
+                                        <Label Text="{Binding TypeBadge}" FontSize="12" FontAttributes="Bold"
+                                               TextColor="{Binding AmountColor}"
+                                               Grid.Row="1" Grid.Column="1" />
+                                        <Button Text="X" FontSize="12" WidthRequest="32" HeightRequest="32"
+                                                BackgroundColor="{StaticResource Danger}" TextColor="White"
+                                                CornerRadius="16" Padding="0"
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:TransactionsViewModel}}, Path=DeleteTransactionCommand}"
+                                                CommandParameter="{Binding .}"
+                                                Grid.Row="0" Grid.RowSpan="2" Grid.Column="2" />
+                                    </Grid>
+                                </Frame>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+            </Frame>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

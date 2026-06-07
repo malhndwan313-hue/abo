@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Shell xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+       xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+       xmlns:views="clr-namespace:AccountingApp.Views"
+       x:Class="AccountingApp.AppShell"
+       Title="دفتر الحسابات"
+       FlowDirection="RightToLeft"
+       Shell.BackgroundColor="{StaticResource Primary}"
+       Shell.ForegroundColor="White"
+       Shell.TitleColor="White"
+       Shell.TabBarBackgroundColor="{StaticResource Primary}"
+       Shell.TabBarForegroundColor="White"
+       Shell.TabBarUnselectedColor="#8ba7c4">
+
+    <TabBar>
+        <ShellContent
+            Title="العملاء"
+            Icon="clients_icon.png"
+            ContentTemplate="{DataTemplate views:ClientsPage}" />
+
+        <ShellContent
+            Title="الموردين"
+            Icon="suppliers_icon.png"
+            ContentTemplate="{DataTemplate views:SuppliersPage}" />
+
+        <ShellContent
+            Title="المعاملات"
+            Icon="transactions_icon.png"
+            ContentTemplate="{DataTemplate views:TransactionsPage}" />
+
+        <ShellContent
+            Title="المصاريف"
+            Icon="expenses_icon.png"
+            ContentTemplate="{DataTemplate views:ExpensesPage}" />
+
+        <ShellContent
+            Title="التقارير"
+            Icon="reports_icon.png"
+            ContentTemplate="{DataTemplate views:ReportsPage}" />
+    </TabBar>
+
+</Shell>
