@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Application xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="AccountingApp.App">
+    <Application.Resources>
+        <ResourceDictionary>
+            <!-- Primary Colors -->
+            <Color x:Key="Primary">#0a2540</Color>
+            <Color x:Key="PrimaryLight">#1c3e55</Color>
+            <Color x:Key="Accent">#0077b6</Color>
+            <Color x:Key="AccentLight">#48cae4</Color>
+            <Color x:Key="Success">#06d6a0</Color>
+            <Color x:Key="Danger">#ef476f</Color>
+            <Color x:Key="Warning">#ffb703</Color>
+            <Color x:Key="WhatsApp">#25d366</Color>
+
+            <!-- Background Colors -->
+            <Color x:Key="BackgroundLight">#f4f7fc</Color>
+            <Color x:Key="CardBackground">#ffffff</Color>
+            <Color x:Key="BorderLight">#e2edf2</Color>
+
+            <!-- Text Colors -->
+            <Color x:Key="TextDark">#1e2c3a</Color>
+            <Color x:Key="TextMuted">#5f7d9c</Color>
+            <Color x:Key="AmountGreen">#059669</Color>
+            <Color x:Key="AmountRed">#dc2626</Color>
+
+            <!-- Styles -->
+            <Style TargetType="NavigationPage">
+                <Setter Property="BarBackgroundColor" Value="{StaticResource Primary}" />
+                <Setter Property="BarTextColor" Value="White" />
+            </Style>
+
+            <Style x:Key="CardFrame" TargetType="Frame">
+                <Setter Property="BackgroundColor" Value="{StaticResource CardBackground}" />
+                <Setter Property="CornerRadius" Value="20" />
+                <Setter Property="Padding" Value="16" />
+                <Setter Property="HasShadow" Value="True" />
+                <Setter Property="BorderColor" Value="{StaticResource BorderLight}" />
+            </Style>
+
+            <Style x:Key="PrimaryButton" TargetType="Button">
+                <Setter Property="BackgroundColor" Value="{StaticResource Accent}" />
+                <Setter Property="TextColor" Value="White" />
+                <Setter Property="FontAttributes" Value="Bold" />
+                <Setter Property="CornerRadius" Value="25" />
+                <Setter Property="Padding" Value="12,8" />
+                <Setter Property="FontSize" Value="16" />
+            </Style>
+
+            <Style x:Key="DangerButton" TargetType="Button">
+                <Setter Property="BackgroundColor" Value="{StaticResource Danger}" />
+                <Setter Property="TextColor" Value="White" />
+                <Setter Property="FontAttributes" Value="Bold" />
+                <Setter Property="CornerRadius" Value="25" />
+                <Setter Property="Padding" Value="12,8" />
+                <Setter Property="FontSize" Value="14" />
+            </Style>
+
+            <Style x:Key="SecondaryButton" TargetType="Button">
+                <Setter Property="BackgroundColor" Value="#e2e8f0" />
+                <Setter Property="TextColor" Value="{StaticResource Primary}" />
+                <Setter Property="FontAttributes" Value="Bold" />
+                <Setter Property="CornerRadius" Value="25" />
+                <Setter Property="Padding" Value="10,6" />
+                <Setter Property="FontSize" Value="14" />
+            </Style>
+
+            <Style x:Key="EntryStyle" TargetType="Entry">
+                <Setter Property="FontSize" Value="16" />
+                <Setter Property="PlaceholderColor" Value="{StaticResource TextMuted}" />
+                <Setter Property="FlowDirection" Value="RightToLeft" />
+            </Style>
+
+            <Style x:Key="SectionTitle" TargetType="Label">
+                <Setter Property="FontSize" Value="20" />
+                <Setter Property="FontAttributes" Value="Bold" />
+                <Setter Property="TextColor" Value="{StaticResource Primary}" />
+                <Setter Property="FlowDirection" Value="RightToLeft" />
+                <Setter Property="Margin" Value="0,8" />
+            </Style>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

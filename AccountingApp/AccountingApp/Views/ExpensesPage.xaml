@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:AccountingApp.ViewModels"
+             x:Class="AccountingApp.Views.ExpensesPage"
+             Title="المصاريف"
+             FlowDirection="RightToLeft"
+             BackgroundColor="{StaticResource BackgroundLight}">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="16">
+
+            <!-- Total Expenses Summary -->
+            <Frame BackgroundColor="{StaticResource Primary}" CornerRadius="20" Padding="20" HasShadow="True">
+                <VerticalStackLayout Spacing="4" HorizontalOptions="Center">
+                    <Label Text="إجمالي المصاريف" FontSize="14" TextColor="#8ba7c4" HorizontalTextAlignment="Center" />
+                    <Label Text="{Binding TotalExpenses, StringFormat='{0:N2}'}"
+                           FontSize="28" FontAttributes="Bold" TextColor="White"
+                           HorizontalTextAlignment="Center" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Add Expense Card -->
+            <Frame Style="{StaticResource CardFrame}">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="تسجيل مصروف جديد" Style="{StaticResource SectionTitle}" />
+
+                    <Entry Placeholder="وصف المصروف"
+                           Text="{Binding NewDescription}"
+                           Style="{StaticResource EntryStyle}" />
+
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                        <Entry Placeholder="المبلغ"
+                               Text="{Binding NewAmount}"
+                               Keyboard="Numeric"
+                               Style="{StaticResource EntryStyle}"
+                               Grid.Column="0" />
+                        <Picker Title="العملة"
+                                SelectedItem="{Binding NewCurrency}"
+                                Grid.Column="1">
+                            <Picker.ItemsSource>
+                                <x:Array Type="{x:Type x:String}">
+                                    <x:String>ريال يمني</x:String>
+                                    <x:String>ريال سعودي</x:String>
+                                    <x:String>دولار أمريكي</x:String>
+                                </x:Array>
+                            </Picker.ItemsSource>
+                        </Picker>
+                    </Grid>
+
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                        <Entry Placeholder="التصنيف (عام، إيجار، نقل...)"
+                               Text="{Binding NewCategory}"
+                               Style="{StaticResource EntryStyle}"
+                               Grid.Column="0" />
+                        <DatePicker Date="{Binding NewDate}" Grid.Column="1"
+                                    FlowDirection="RightToLeft" />
+                    </Grid>
+
+                    <Entry Placeholder="ملاحظات (اختياري)"
+                           Text="{Binding NewNotes}"
+                           Style="{StaticResource EntryStyle}" />
+
+                    <Button Text="حفظ المصروف"
+                            Command="{Binding AddExpenseCommand}"
+                            Style="{StaticResource PrimaryButton}" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Expenses List -->
+            <Frame Style="{StaticResource CardFrame}">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="سجل المصاريف" Style="{StaticResource SectionTitle}" />
+
+                    <CollectionView ItemsSource="{Binding Expenses}"
+                                    EmptyView="لا توجد مصاريف مسجلة">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Frame Padding="12" Margin="0,4" CornerRadius="14"
+                                       BackgroundColor="White" BorderColor="{StaticResource BorderLight}">
+                                    <Grid ColumnDefinitions="*,Auto,Auto" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="8">
+                                        <Label Text="{Binding Description}" FontAttributes="Bold" FontSize="15"
+                                               Grid.Row="0" Grid.Column="0" />
+                                        <Label Text="{Binding AmountDisplay}" FontAttributes="Bold"
+                                               TextColor="{StaticResource AmountRed}" FontSize="15"
+                                               Grid.Row="0" Grid.Column="1" />
+                                        <Label Text="{Binding Category}" FontSize="12"
+                                               TextColor="{StaticResource Accent}"
+                                               Grid.Row="1" Grid.Column="0" />
+                                        <Label Text="{Binding DateDisplay}" FontSize="12"
+                                               TextColor="{StaticResource TextMuted}"
+                                               Grid.Row="2" Grid.Column="0" />
+                                        <Button Text="X" FontSize="12" WidthRequest="32" HeightRequest="32"
+                                                BackgroundColor="{StaticResource Danger}" TextColor="White"
+                                                CornerRadius="16" Padding="0"
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ExpensesViewModel}}, Path=DeleteExpenseCommand}"
+                                                CommandParameter="{Binding .}"
+                                                Grid.Row="0" Grid.RowSpan="3" Grid.Column="2" />
+                                    </Grid>
+                                </Frame>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+            </Frame>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

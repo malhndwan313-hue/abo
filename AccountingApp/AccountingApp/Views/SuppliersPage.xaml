@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:AccountingApp.ViewModels"
+             x:Class="AccountingApp.Views.SuppliersPage"
+             Title="الموردين"
+             FlowDirection="RightToLeft"
+             BackgroundColor="{StaticResource BackgroundLight}">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="16">
+
+            <!-- Add Supplier Card -->
+            <Frame Style="{StaticResource CardFrame}">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="إضافة مورد جديد" Style="{StaticResource SectionTitle}" />
+
+                    <Entry Placeholder="اسم المورد"
+                           Text="{Binding NewSupplierName}"
+                           Style="{StaticResource EntryStyle}" />
+
+                    <Entry Placeholder="اسم الشركة (اختياري)"
+                           Text="{Binding NewSupplierCompany}"
+                           Style="{StaticResource EntryStyle}" />
+
+                    <Entry Placeholder="رقم الهاتف"
+                           Text="{Binding NewSupplierPhone}"
+                           Keyboard="Telephone"
+                           Style="{StaticResource EntryStyle}" />
+
+                    <Entry Placeholder="العنوان (اختياري)"
+                           Text="{Binding NewSupplierAddress}"
+                           Style="{StaticResource EntryStyle}" />
+
+                    <Button Text="حفظ المورد"
+                            Command="{Binding AddSupplierCommand}"
+                            Style="{StaticResource PrimaryButton}" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Suppliers List -->
+            <Frame Style="{StaticResource CardFrame}">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="قائمة الموردين" Style="{StaticResource SectionTitle}" />
+
+                    <CollectionView ItemsSource="{Binding Suppliers}"
+                                    EmptyView="لا يوجد موردين حالياً">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Frame Padding="12" Margin="0,4" CornerRadius="16"
+                                       BackgroundColor="White" BorderColor="{StaticResource BorderLight}">
+                                    <Frame.GestureRecognizers>
+                                        <TapGestureRecognizer
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:SuppliersViewModel}}, Path=SelectSupplierCommand}"
+                                            CommandParameter="{Binding .}" />
+                                    </Frame.GestureRecognizers>
+                                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto">
+                                        <Label Text="{Binding Name}" FontAttributes="Bold" FontSize="16"
+                                               Grid.Row="0" Grid.Column="0" />
+                                        <Label Text="{Binding CompanyName}" FontSize="13"
+                                               TextColor="{StaticResource Accent}"
+                                               Grid.Row="1" Grid.Column="0" />
+                                        <Label Text="{Binding Phone}" FontSize="12"
+                                               TextColor="{StaticResource TextMuted}"
+                                               Grid.Row="2" Grid.Column="0" />
+                                        <Label Text="{Binding BalanceDisplay}" FontAttributes="Bold"
+                                               TextColor="{Binding BalanceColor}" FontSize="14"
+                                               Grid.Row="0" Grid.Column="1" VerticalOptions="Center" />
+                                        <Button Text="حذف" FontSize="12"
+                                                Style="{StaticResource DangerButton}"
+                                                HeightRequest="32" Padding="8,2"
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:SuppliersViewModel}}, Path=DeleteSupplierCommand}"
+                                                CommandParameter="{Binding .}"
+                                                Grid.Row="2" Grid.Column="1" />
+                                    </Grid>
+                                </Frame>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Supplier Account -->
+            <Frame Style="{StaticResource CardFrame}" IsVisible="{Binding IsSupplierSelected}">
+                <VerticalStackLayout Spacing="10">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Text="{Binding SelectedSupplier.Name, StringFormat='حساب: {0}'}"
+                               Style="{StaticResource SectionTitle}" Grid.Column="0" />
+                        <Button Text="رجوع" Style="{StaticResource SecondaryButton}"
+                                Command="{Binding DeselectSupplierCommand}"
+                                Grid.Column="1" />
+                    </Grid>
+
+                    <Label Text="تسجيل معاملة جديدة" FontAttributes="Bold" FontSize="15"
+                           TextColor="{StaticResource Accent}" />
+
+                    <Entry Placeholder="البيان / التفاصيل"
+                           Text="{Binding TransDetail}"
+                           Style="{StaticResource EntryStyle}" />
+
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                        <Entry Placeholder="المبلغ"
+                               Text="{Binding TransAmount}"
+                               Keyboard="Numeric"
+                               Style="{StaticResource EntryStyle}"
+                               Grid.Column="0" />
+                        <Picker Title="العملة"
+                                SelectedItem="{Binding TransCurrency}"
+                                Grid.Column="1">
+                            <Picker.ItemsSource>
+                                <x:Array Type="{x:Type x:String}">
+                                    <x:String>ريال يمني</x:String>
+                                    <x:String>ريال سعودي</x:String>
+                                    <x:String>دولار أمريكي</x:String>
+                                </x:Array>
+                            </Picker.ItemsSource>
+                        </Picker>
+                    </Grid>
+
+                    <DatePicker Date="{Binding TransDate}" FlowDirection="RightToLeft" />
+
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                        <Button Text="له (دائن)"
+                                Clicked="OnCreditClicked"
+                                Style="{StaticResource PrimaryButton}"
+                                Grid.Column="0" />
+                        <Button Text="عليه (مدين)"
+                                BackgroundColor="{StaticResource Danger}"
+                                Clicked="OnDebitClicked"
+                                Grid.Column="1"
+                                TextColor="White" FontAttributes="Bold"
+                                CornerRadius="25" />
+                    </Grid>
+
+                    <Button Text="حفظ المعاملة"
+                            Command="{Binding AddTransactionCommand}"
+                            Style="{StaticResource PrimaryButton}" />
+
+                    <!-- Supplier Transactions -->
+                    <Label Text="سجل المعاملات" FontAttributes="Bold" FontSize="15"
+                           TextColor="{StaticResource Primary}" Margin="0,10,0,0" />
+
+                    <CollectionView ItemsSource="{Binding SupplierTransactions}"
+                                    EmptyView="لا توجد معاملات">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Frame Padding="10" Margin="0,3" CornerRadius="12"
+                                       BackgroundColor="#fafbfd" BorderColor="{StaticResource BorderLight}">
+                                    <Grid ColumnDefinitions="*,Auto,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="8">
+                                        <Label Text="{Binding Details}" FontAttributes="Bold" FontSize="14"
+                                               Grid.Row="0" Grid.Column="0" />
+                                        <Label Text="{Binding AmountDisplay}" FontAttributes="Bold"
+                                               TextColor="{Binding AmountColor}" FontSize="14"
+                                               Grid.Row="0" Grid.Column="1" />
+                                        <Label Text="{Binding DateDisplay}" FontSize="12"
+                                               TextColor="{StaticResource TextMuted}"
+                                               Grid.Row="1" Grid.Column="0" />
+                                        <Label Text="{Binding TypeBadge}" FontSize="11"
+                                               TextColor="{Binding AmountColor}"
+                                               Grid.Row="1" Grid.Column="1" />
+                                        <Button Text="X" FontSize="12" WidthRequest="32" HeightRequest="32"
+                                                BackgroundColor="{StaticResource Danger}" TextColor="White"
+                                                CornerRadius="16" Padding="0"
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:SuppliersViewModel}}, Path=DeleteTransactionCommand}"
+                                                CommandParameter="{Binding .}"
+                                                Grid.Row="0" Grid.RowSpan="2" Grid.Column="2" />
+                                    </Grid>
+                                </Frame>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+            </Frame>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

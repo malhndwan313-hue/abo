@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="AccountingApp.Views.ReportsPage"
+             Title="التقارير"
+             FlowDirection="RightToLeft"
+             BackgroundColor="{StaticResource BackgroundLight}">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="16">
+
+            <!-- Net Balance Header -->
+            <Frame BackgroundColor="{StaticResource Primary}" CornerRadius="24" Padding="24" HasShadow="True">
+                <VerticalStackLayout Spacing="8" HorizontalOptions="Center">
+                    <Label Text="الملخص المالي" FontSize="16" TextColor="#8ba7c4"
+                           HorizontalTextAlignment="Center" />
+                    <Label Text="{Binding NetBalanceText}" FontSize="22" FontAttributes="Bold"
+                           TextColor="{Binding NetBalanceColor}"
+                           HorizontalTextAlignment="Center" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Stats Cards -->
+            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="12" RowSpacing="12">
+
+                <!-- Clients Count -->
+                <Frame Style="{StaticResource CardFrame}" Grid.Row="0" Grid.Column="0">
+                    <VerticalStackLayout Spacing="4" HorizontalOptions="Center">
+                        <Label Text="العملاء" FontSize="13" TextColor="{StaticResource TextMuted}"
+                               HorizontalTextAlignment="Center" />
+                        <Label Text="{Binding ClientCount}" FontSize="28" FontAttributes="Bold"
+                               TextColor="{StaticResource Primary}" HorizontalTextAlignment="Center" />
+                    </VerticalStackLayout>
+                </Frame>
+
+                <!-- Suppliers Count -->
+                <Frame Style="{StaticResource CardFrame}" Grid.Row="0" Grid.Column="1">
+                    <VerticalStackLayout Spacing="4" HorizontalOptions="Center">
+                        <Label Text="الموردين" FontSize="13" TextColor="{StaticResource TextMuted}"
+                               HorizontalTextAlignment="Center" />
+                        <Label Text="{Binding SupplierCount}" FontSize="28" FontAttributes="Bold"
+                               TextColor="{StaticResource Primary}" HorizontalTextAlignment="Center" />
+                    </VerticalStackLayout>
+                </Frame>
+
+                <!-- Total Receivables -->
+                <Frame Style="{StaticResource CardFrame}" Grid.Row="1" Grid.Column="0">
+                    <VerticalStackLayout Spacing="4" HorizontalOptions="Center">
+                        <Label Text="إجمالي المستحقات (له)" FontSize="12"
+                               TextColor="{StaticResource TextMuted}" HorizontalTextAlignment="Center" />
+                        <Label Text="{Binding TotalReceivables, StringFormat='{0:N2}'}"
+                               FontSize="20" FontAttributes="Bold"
+                               TextColor="{StaticResource AmountGreen}" HorizontalTextAlignment="Center" />
+                    </VerticalStackLayout>
+                </Frame>
+
+                <!-- Total Payables -->
+                <Frame Style="{StaticResource CardFrame}" Grid.Row="1" Grid.Column="1">
+                    <VerticalStackLayout Spacing="4" HorizontalOptions="Center">
+                        <Label Text="إجمالي الالتزامات (عليه)" FontSize="12"
+                               TextColor="{StaticResource TextMuted}" HorizontalTextAlignment="Center" />
+                        <Label Text="{Binding TotalPayables, StringFormat='{0:N2}'}"
+                               FontSize="20" FontAttributes="Bold"
+                               TextColor="{StaticResource AmountRed}" HorizontalTextAlignment="Center" />
+                    </VerticalStackLayout>
+                </Frame>
+            </Grid>
+
+            <!-- Expenses Summary -->
+            <Frame Style="{StaticResource CardFrame}">
+                <VerticalStackLayout Spacing="6" HorizontalOptions="Center">
+                    <Label Text="إجمالي المصاريف" FontSize="14"
+                           TextColor="{StaticResource TextMuted}" HorizontalTextAlignment="Center" />
+                    <Label Text="{Binding TotalExpenses, StringFormat='{0:N2}'}"
+                           FontSize="24" FontAttributes="Bold"
+                           TextColor="{StaticResource Warning}" HorizontalTextAlignment="Center" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Footer -->
+            <Label Text="نظام متقدم لإدارة الحسابات | تطوير م/محمد سالم الهندوان"
+                   FontSize="11" TextColor="{StaticResource TextMuted}"
+                   HorizontalTextAlignment="Center" Margin="0,8" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
