@@ -686,7 +686,25 @@
         const rangeModal = document.getElementById('rangeSelectionModal');
         let pendingPdfAction = null;
 
+        // ═══════════════════════════════════════════════════════
+        // أدوات مشتركة - Shared Utilities
+        // ═══════════════════════════════════════════════════════
+
         function saveToLocal() { localStorage.setItem('smart_accounting', JSON.stringify(appData)); }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;' };
+            return str.replace(/[&<>]/g, m => map[m] || m);
+        }
+
+        function getActiveClient() {
+            return appData.clients.find(c => c.id === activeClientId) || null;
+        }
+
+        function findClientById(id) {
+            return appData.clients.find(c => c.id === id) || null;
+        }
 
         function getTodayDateString() {
             return new Date().toISOString().split('T')[0];
@@ -709,23 +727,61 @@
             return filtered.sort((a, b) => new Date(a.date) - new Date(b.date));
         }
 
+        function getTransactionStyle(type) {
+            const isCredit = (type === 'له');
+            return {
+                badgeClass: isCredit ? 'badge-lahu' : 'badge-alayhi',
+                amountClass: isCredit ? 'amount-lahu' : 'amount-alayhi',
+                amountSign: isCredit ? '+' : '-',
+                amountColor: isCredit ? '#059669' : '#dc2626'
+            };
+        }
+
+        function computeBalanceSummary(transactions) {
+            const sums = {};
+            transactions.forEach(t => {
+                if (!sums[t.currency]) sums[t.currency] = { له: 0, عليه: 0 };
+                sums[t.currency][t.type] += t.amount;
+            });
+            return sums;
+        }
+
+        function formatBalanceText(balance, currency) {
+            if (balance > 0) return `له بمبلغ: ${balance.toFixed(2)} ${currency}`;
+            if (balance < 0) return `عليه بمبلغ: ${Math.abs(balance).toFixed(2)} ${currency}`;
+            return `متزن وصفر ${currency}`;
+        }
+
+        function getRangeLabel(range, style) {
+            const labels = {
+                full: { day: 'عمليات اليوم', month: 'عمليات الشهر', all: 'كشف كامل' },
+                short: { day: 'اليوم', month: 'الشهر', all: 'كامل' },
+                whatsapp: { day: 'اليوم', month: 'الشهر الحالي', all: 'كامل' },
+                alert: { day: 'اليوم', month: 'الشهر', all: 'المحدد' }
+            };
+            return (labels[style] || labels.full)[range] || range;
+        }
+
+        function openModal(modalEl) { modalEl.classList.add('open'); }
+        function closeModal(modalEl) { modalEl.classList.remove('open'); }
+
         function openRangeModal(actionType) {
-            const client = appData.clients.find(c => c.id === activeClientId);
+            const client = getActiveClient();
             if (!client || client.transactions.length === 0) {
                 alert("لا توجد معاملات لمشاركتها أو تصديرها.");
                 return;
             }
             pendingPdfAction = actionType;
-            rangeModal.classList.add('open');
+            openModal(rangeModal);
         }
 
         function closeRangeModal() {
-            rangeModal.classList.remove('open');
+            closeModal(rangeModal);
             pendingPdfAction = null;
         }
 
         function generatePDFBlob(range) {
-            const client = appData.clients.find(c => c.id === activeClientId);
+            const client = getActiveClient();
             if (!client) return Promise.reject("لا يوجد عميل نشط");
 
             const filteredTransactions = filterTransactionsByRange(client.transactions, range);
@@ -736,34 +792,27 @@
 
             let tableRows = '';
             filteredTransactions.forEach(t => {
-                const badgeClass = t.type === 'له' ? 'badge-lahu' : 'badge-alayhi';
-                const amountColor = t.type === 'له' ? '#059669' : '#dc2626';
-                const amountPrefix = t.type === 'له' ? '+' : '-';
+                const style = getTransactionStyle(t.type);
                 tableRows += `
                     <tr>
                         <td style="font-weight:600;">${escapeHtml(t.details)}</td>
-                        <td style="color:${amountColor};font-weight:700;">${amountPrefix} ${parseFloat(t.amount).toFixed(2)}</td>
+                        <td style="color:${style.amountColor};font-weight:700;">${style.amountSign} ${parseFloat(t.amount).toFixed(2)}</td>
                         <td>${t.currency}</td>
                         <td>${t.date}</td>
-                        <td><span class="badge ${badgeClass}" style="display:inline-block;padding:4px 10px;border-radius:40px;">${t.type}</span></td>
+                        <td><span class="badge ${style.badgeClass}" style="display:inline-block;padding:4px 10px;border-radius:40px;">${t.type}</span></td>
                     </tr>
                 `;
             });
 
-            const sums = {};
-            filteredTransactions.forEach(t => {
-                if (!sums[t.currency]) sums[t.currency] = { له: 0, عليه: 0 };
-                sums[t.currency][t.type] += t.amount;
-            });
+            const sums = computeBalanceSummary(filteredTransactions);
             let summaryRows = '';
             for (const curr in sums) {
                 const bal = sums[curr].له - sums[curr].عليه;
-                let balanceText = bal > 0 ? `له بمبلغ: ${bal.toFixed(2)}` : (bal < 0 ? `عليه بمبلغ: ${Math.abs(bal).toFixed(2)}` : `متزن وصفر`);
                 const balColor = bal >= 0 ? '#059669' : '#dc2626';
-                summaryRows += `<tr style="background:#f8f9fc;font-weight:800;"><td colspan="2">صافي الرصيد (${curr})</td><td colspan="3" style="text-align:left;color:${balColor};">${balanceText} ${curr}</td></tr>`;
+                summaryRows += `<tr style="background:#f8f9fc;font-weight:800;"><td colspan="2">صافي الرصيد (${curr})</td><td colspan="3" style="text-align:left;color:${balColor};">${formatBalanceText(bal, curr)}</td></tr>`;
             }
 
-            const rangeLabel = range === 'day' ? 'عمليات اليوم' : (range === 'month' ? 'عمليات الشهر' : 'كشف كامل');
+            const rangeLabel = getRangeLabel(range, 'full');
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = `
                 <div style="font-family: 'Segoe UI', Tahoma, sans-serif; padding: 20px; direction: rtl; text-align: right;">
@@ -793,12 +842,12 @@
 
         async function handlePdfAction(range) {
             if (!pendingPdfAction) return;
-            const client = appData.clients.find(c => c.id === activeClientId);
+            const client = getActiveClient();
             if (!client) return;
 
             try {
                 const blob = await generatePDFBlob(range);
-                const rangeLabel = range === 'day' ? 'اليوم' : (range === 'month' ? 'الشهر' : 'كامل');
+                const rangeLabel = getRangeLabel(range, 'short');
                 const fileName = `كشف_حساب_${client.name}_${rangeLabel}.pdf`;
                 const file = new File([blob], fileName, { type: 'application/pdf' });
 
@@ -838,7 +887,7 @@
         }
 
         function shareWhatsAppWithRange(range) {
-            const client = appData.clients.find(c => c.id === activeClientId);
+            const client = getActiveClient();
             if (!client || client.transactions.length === 0) {
                 alert("لا توجد معاملات");
                 return;
@@ -846,29 +895,24 @@
             
             const filtered = filterTransactionsByRange(client.transactions, range);
             if (filtered.length === 0) {
-                alert(`لا توجد حركات لنطاق ${range === 'day' ? 'اليوم' : (range === 'month' ? 'الشهر' : 'المحدد')}`);
+                alert(`لا توجد حركات لنطاق ${getRangeLabel(range, 'alert')}`);
                 return;
             }
 
             let msg = `*📋 كشف حساب معتمد - ${client.name}*\n`;
-            msg += `النطاق: ${range === 'day' ? 'اليوم' : (range === 'month' ? 'الشهر الحالي' : 'كامل')}\n`;
+            msg += `النطاق: ${getRangeLabel(range, 'whatsapp')}\n`;
             msg += `------------------------------------\n`;
             
             filtered.forEach(t => {
-                const sign = t.type === 'له' ? '+' : '-';
-                msg += `📌 *البيان:* ${t.details}\n💰 *المبلغ:* ${sign} ${t.amount.toFixed(2)} ${t.currency}\n📅 *التاريخ:* ${t.date} | ${t.type}\n------------------------------------\n`;
+                const style = getTransactionStyle(t.type);
+                msg += `📌 *البيان:* ${t.details}\n💰 *المبلغ:* ${style.amountSign} ${t.amount.toFixed(2)} ${t.currency}\n📅 *التاريخ:* ${t.date} | ${t.type}\n------------------------------------\n`;
             });
 
-            let summary = {};
-            filtered.forEach(t => { 
-                if (!summary[t.currency]) summary[t.currency] = { له: 0, عليه: 0 };
-                summary[t.currency][t.type] += t.amount; 
-            });
-            
+            const sums = computeBalanceSummary(filtered);
             msg += `\n🧮 *صافي الرصيد:*\n`;
-            for (const c in summary) {
-                let bal = summary[c].له - summary[c].عليه;
-                msg += `• ${c}: ${bal>0?`له ${bal.toFixed(2)}`:bal<0?`عليه ${Math.abs(bal).toFixed(2)}`:'متزن وصفر'} ${c}\n`;
+            for (const c in sums) {
+                const bal = sums[c].له - sums[c].عليه;
+                msg += `• ${c}: ${formatBalanceText(bal, c)}\n`;
             }
 
             const phone = client.phone.replace(/[^0-9]/g, '');
@@ -948,7 +992,7 @@
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     const id = btn.dataset.id;
-                    const client = appData.clients.find(c => c.id === id);
+                    const client = findClientById(id);
                     if (!client) return;
                     const newName = prompt("الاسم الجديد:", client.name);
                     if (newName === null) return;
@@ -969,7 +1013,7 @@
 
         function showAccountScreen(clientId) {
             activeClientId = clientId;
-            const client = appData.clients.find(c => c.id === clientId);
+            const client = getActiveClient();
             if (!client) return;
             document.getElementById('activeClientName').innerText = client.name;
             document.getElementById('activeClientPhoneDisplay').innerHTML = `📱 ${client.phone}`;
@@ -1003,7 +1047,7 @@
 
         function renderTransactionsTable() {
             if (!activeClientId) return;
-            const client = appData.clients.find(c => c.id === activeClientId);
+            const client = getActiveClient();
             if (!client) return;
             const sorted = [...client.transactions].sort((a, b) => new Date(a.date) - new Date(b.date));
             transactionsBody.innerHTML = '';
@@ -1015,15 +1059,13 @@
                 const row = transactionsBody.insertRow();
                 row.classList.add('selectable-row');
                 row.dataset.id = t.id;
-                const badgeClass = t.type === 'له' ? 'badge-lahu' : 'badge-alayhi';
-                const amountClass = t.type === 'له' ? 'amount-lahu' : 'amount-alayhi';
-                const amountSign = t.type === 'له' ? '+' : '-';
+                const style = getTransactionStyle(t.type);
                 row.innerHTML = `
                     <td style="font-weight:600;">${escapeHtml(t.details)}</td>
-                    <td class="${amountClass}">${amountSign} ${parseFloat(t.amount).toFixed(2)}</td>
+                    <td class="${style.amountClass}">${style.amountSign} ${parseFloat(t.amount).toFixed(2)}</td>
                     <td>${t.currency}</td>
                     <td>${t.date}</td>
-                    <td><span class="badge ${badgeClass}">${t.type}</span></td>
+                    <td><span class="badge ${style.badgeClass}">${t.type}</span></td>
                 `;
                 row.addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -1035,25 +1077,20 @@
                 });
             });
 
-            const sums = {};
-            client.transactions.forEach(t => {
-                if (!sums[t.currency]) sums[t.currency] = { له: 0, عليه: 0 };
-                sums[t.currency][t.type] += t.amount;
-            });
+            const sums = computeBalanceSummary(client.transactions);
             for (const curr in sums) {
                 const bal = sums[curr].له - sums[curr].عليه;
-                let balanceText = bal > 0 ? `له بمبلغ: ${bal.toFixed(2)}` : (bal < 0 ? `عليه بمبلغ: ${Math.abs(bal).toFixed(2)}` : `متزن وصفر`);
                 const balColor = bal >= 0 ? 'var(--amount-green)' : 'var(--amount-red)';
                 const sumRow = transactionsBody.insertRow();
                 sumRow.classList.add('summary-row');
-                sumRow.innerHTML = `<td colspan="2" style="font-weight:800;">صافي الرصيد (${curr})</td><td colspan="3" style="text-align:left; color:${balColor};">${balanceText} ${curr}</td>`;
+                sumRow.innerHTML = `<td colspan="2" style="font-weight:800;">صافي الرصيد (${curr})</td><td colspan="3" style="text-align:left; color:${balColor};">${formatBalanceText(bal, curr)}</td>`;
             }
         }
 
         document.getElementById('transactionForm').addEventListener('submit', (e) => {
             e.preventDefault();
             if (!activeClientId) return;
-            const client = appData.clients.find(c => c.id === activeClientId);
+            const client = getActiveClient();
             if (!client) return;
             const detail = document.getElementById('transDetail').value.trim();
             const amount = parseFloat(document.getElementById('transAmount').value);
@@ -1095,26 +1132,26 @@
         document.getElementById('cancelEditBtn').addEventListener('click', resetFormMode);
 
         let pendingAction = null;
+        const actionModal = document.getElementById('actionModal');
         function openCurrencyModal(action, transId) {
-            const client = appData.clients.find(c => c.id === activeClientId);
+            const client = getActiveClient();
             if (!client) return;
             const transaction = client.transactions.find(t => t.id === transId);
             if (!transaction) return;
             document.getElementById('modalCurrency').value = transaction.currency;
-            const modal = document.getElementById('actionModal');
-            modal.classList.add('open');
+            openModal(actionModal);
             pendingAction = { action, transId };
             document.getElementById('modalTitle').innerText = action === 'edit' ? '✏️ تعديل المعاملة' : '🗑️ حذف المعاملة';
         }
         function closeModalAndClear() { 
-            document.getElementById('actionModal').classList.remove('open');
+            closeModal(actionModal);
             pendingAction = null; 
         }
         document.getElementById('closeModalBtn').addEventListener('click', closeModalAndClear);
         document.getElementById('confirmModalAction').addEventListener('click', () => {
             if (!pendingAction) { closeModalAndClear(); return; }
             const chosenCurr = document.getElementById('modalCurrency').value;
-            const client = appData.clients.find(c => c.id === activeClientId);
+            const client = getActiveClient();
             if (!client) { closeModalAndClear(); return; }
             const transaction = client.transactions.find(t => t.id === pendingAction.transId);
             if (!transaction) { closeModalAndClear(); return; }
@@ -1151,8 +1188,8 @@
         bottomDelete.addEventListener('click', () => { if (selectedTransId) openCurrencyModal('delete', selectedTransId); });
 
         const wspModal = document.getElementById('whatsappModal');
-        function openWhatsappModalFunc() { wspModal.classList.add('open'); }
-        function closeWhatsappModal() { wspModal.classList.remove('open'); }
+        function openWhatsappModalFunc() { openModal(wspModal); }
+        function closeWhatsappModal() { closeModal(wspModal); }
         document.getElementById('whatsappShareBtn').addEventListener('click', openWhatsappModalFunc);
         document.getElementById('closeWhatsappBtn').addEventListener('click', closeWhatsappModal);
         
@@ -1168,28 +1205,18 @@
         });
         document.addEventListener('click', () => dropdown.classList.remove('show'));
         
+        const infoModalEl = document.getElementById('infoModal');
         function showInfoModal(title, msg) { 
-            const m = document.getElementById('infoModal');
             document.getElementById('infoTitle').innerText = title;
             document.getElementById('infoMsg').innerHTML = msg;
-            m.classList.add('open');
-            document.querySelector('.closeInfoBtn').onclick = () => m.classList.remove('open'); 
+            openModal(infoModalEl);
+            document.querySelector('.closeInfoBtn').onclick = () => closeModal(infoModalEl); 
         }
         document.getElementById('aboutBtn').addEventListener('click', () => showInfoModal('ℹ️ عن البرنامج',
             'دفتر الحسابات الاحترافي V4.0 – نظام متكامل لإدارة العملاء والمعاملات المالية بكل احترافية.<br> حفظ تلقائي وواجهة عصرية.'
         ));
         document.getElementById('supportBtn').addEventListener('click', () => showInfoModal('🛠️ الدعم الفني',
             'للتواصل والدعم: <br>واتساب: 776713985<br> البريد: malhndwan313@gmail.com'));
-
-        function escapeHtml(str) { 
-            if (!str) return ''; 
-            return str.replace(/[&<>]/g, function(m) { 
-                if (m === '&') return '&amp;'; 
-                if (m === '<') return '&lt;'; 
-                if (m === '>') return '&gt;'; 
-                return m; 
-            }); 
-        }
 
         document.getElementById('transDate').value = getTodayDateString();
         renderClientsList();
