@@ -1,0 +1,12 @@
+{
+  "name": "abo-accounting",
+  "version": "1.0.0",
+  "description": "Professional accounting ledger application",
+  "scripts": {
+    "test": "jest --verbose",
+    "test:coverage": "jest --coverage"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}
