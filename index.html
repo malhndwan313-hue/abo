@@ -668,7 +668,18 @@
     <footer class="no-print">نظام متقدم لإدارة الحسابات | تطوير م/محمد سالم الهندوان</footer>
 
     <script>
-        let appData = JSON.parse(localStorage.getItem('smart_accounting')) || { clients: [] };
+        let appData;
+        try {
+            const raw = localStorage.getItem('smart_accounting');
+            appData = raw ? JSON.parse(raw) : { clients: [] };
+            if (!appData || !Array.isArray(appData.clients)) {
+                throw new Error('Invalid data structure');
+            }
+        } catch (err) {
+            console.error('فشل تحميل بيانات التطبيق من التخزين المحلي:', err);
+            appData = { clients: [] };
+            alert('تعذّر تحميل البيانات المحفوظة. تم البدء بجلسة جديدة.');
+        }
         let activeClientId = null;
         let currentTransactionType = "له";
         let editModeId = null;
@@ -686,7 +697,14 @@
         const rangeModal = document.getElementById('rangeSelectionModal');
         let pendingPdfAction = null;
 
-        function saveToLocal() { localStorage.setItem('smart_accounting', JSON.stringify(appData)); }
+        function saveToLocal() {
+            try {
+                localStorage.setItem('smart_accounting', JSON.stringify(appData));
+            } catch (err) {
+                console.error('فشل حفظ البيانات في التخزين المحلي:', err);
+                alert('تعذّر حفظ البيانات — قد تكون مساحة التخزين ممتلئة. يرجى تفريغ بعض المساحة والمحاولة مجدداً.');
+            }
+        }
 
         function getTodayDateString() {
             return new Date().toISOString().split('T')[0];
@@ -788,6 +806,10 @@
                 html2canvas: { scale: 2 },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
+            if (typeof html2pdf === 'undefined') {
+                alert('تعذّر تحميل مكتبة إنشاء PDF. تحقق من اتصال الإنترنت وأعد تحميل الصفحة.');
+                return Promise.reject('html2pdf library not loaded');
+            }
             return html2pdf().set(opt).from(tempDiv).outputPdf('blob');
         }
 
@@ -820,8 +842,11 @@
                         });
                     } else {
                         const url = URL.createObjectURL(blob);
-                        window.open(url, '_blank');
-                        setTimeout(() => URL.revokeObjectURL(url), 1000);
+                        const win = window.open(url, '_blank');
+                        if (!win) {
+                            alert('تم حظر النافذة المنبثقة. يرجى السماح بالنوافذ المنبثقة لهذا الموقع.');
+                        }
+                        setTimeout(() => URL.revokeObjectURL(url), 5000);
                         alert("تم فتح الملف. يمكنك مشاركته أو حفظه يدوياً.");
                     }
                 } else if (pendingPdfAction === 'whatsapp') {
@@ -829,7 +854,11 @@
                 }
             } catch (error) {
                 console.error("خطأ في معالجة PDF:", error);
-                if (error !== "لا توجد عمليات") {
+                if (error === 'لا توجد عمليات' || error === 'html2pdf library not loaded') {
+                    // already alerted to the user
+                } else if (error instanceof DOMException && error.name === 'AbortError') {
+                    // user cancelled the share dialog — not an error
+                } else {
                     alert("حدث خطأ أثناء إنشاء الملف. الرجاء المحاولة مرة أخرى.");
                 }
             } finally {
@@ -872,12 +901,15 @@
             }
 
             const phone = client.phone.replace(/[^0-9]/g, '');
-            window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+            const win = window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+            if (!win) {
+                alert('تم حظر النافذة المنبثقة. يرجى السماح بالنوافذ المنبثقة لهذا الموقع لإرسال الرسالة عبر واتساب.');
+            }
         }
 
         document.getElementById('pdfExportBtn').addEventListener('click', () => openRangeModal('download'));
         document.getElementById('sharePdfBtn').addEventListener('click', () => openRangeModal('share'));
-        document.getElementById('whatsappShareBtn').addEventListener('click', () => openRangeModal('whatsapp'));
+        // WhatsApp share uses the range modal exclusively (duplicate listener removed below)
 
         document.getElementById('rangeAllBtn').addEventListener('click', () => handlePdfAction('all'));
         document.getElementById('rangeDayBtn').addEventListener('click', () => handlePdfAction('day'));
@@ -1150,11 +1182,10 @@
         bottomEdit.addEventListener('click', () => { if (selectedTransId) openCurrencyModal('edit', selectedTransId); });
         bottomDelete.addEventListener('click', () => { if (selectedTransId) openCurrencyModal('delete', selectedTransId); });
 
-        const wspModal = document.getElementById('whatsappModal');
-        function openWhatsappModalFunc() { wspModal.classList.add('open'); }
-        function closeWhatsappModal() { wspModal.classList.remove('open'); }
-        document.getElementById('whatsappShareBtn').addEventListener('click', openWhatsappModalFunc);
-        document.getElementById('closeWhatsappBtn').addEventListener('click', closeWhatsappModal);
+        document.getElementById('whatsappShareBtn').addEventListener('click', () => openRangeModal('whatsapp'));
+        document.getElementById('closeWhatsappBtn').addEventListener('click', () => {
+            document.getElementById('whatsappModal').classList.remove('open');
+        });
         
         document.getElementById('waAllBtn').onclick = () => shareWhatsAppWithRange('all');
         document.getElementById('waDayBtn').onclick = () => shareWhatsAppWithRange('day');
@@ -1183,10 +1214,12 @@
 
         function escapeHtml(str) { 
             if (!str) return ''; 
-            return str.replace(/[&<>]/g, function(m) { 
+            return str.replace(/[&<>"']/g, function(m) { 
                 if (m === '&') return '&amp;'; 
                 if (m === '<') return '&lt;'; 
                 if (m === '>') return '&gt;'; 
+                if (m === '"') return '&quot;'; 
+                if (m === "'") return '&#39;'; 
                 return m; 
             }); 
         }
